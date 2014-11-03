@@ -204,7 +204,7 @@ def main():
                         help="Output file with properties of images")
     parser.add_argument("--maxPts", type=int, default=100000,
                         help="Max number of points to read from input file")
-    parser.add_argument("--nRandom", type=int, default=1000,
+    parser.add_argument("--nRandom", type=int, default=100,
                         help="Number of random galaxies to generate")
     parser.add_argument("--nGaussians", type=int, default=5,
                         help="Number of gaussians to fit density of galaxy properties")
@@ -258,7 +258,7 @@ def main():
     random_seed = args.seed  
     rng = galsim.BaseDeviate(random_seed)
     of = open(os.path.join(args.outputDirectory,args.outputFile),'w')
-    of.write("#Index, m, z, Re(arcsec), Rd(arsec), BTT, ellipticity_bulge, inclination_disk, PA\n") 
+    of.write("#Index, m, z, counts, Re(arcsec), Rd(arsec), BTT, ellipticity_bulge, inclination_disk, PA\n") 
     for i,(mGal,zGal,scaleGal,eGal,iGal,phiGal,bttGal,(Re,Rd)) \
             in enumerate(zip(m,z,sizeScale,e, i, phi, BTT, sampled_data)):
         #set bounds for values
@@ -287,8 +287,8 @@ def main():
         img = galsim.ImageF(64, 64, scale=0.45)
         image = final.drawImage(image=img)
         image.write('%s/testImage_%d.fits'%(args.outputDirectory,i))
-        of.write("%d, %g, %g, %g, %g, %g, %g, %g, %g\n"
-                 %(i,mGal,zGal,ReScale,RdScale,bttGal,eGal,iGal,phiGal)) 
+        of.write("%d, %g, %g, %g, %g, %g, %g, %g, %g, %g\n"
+                 %(i,mGal,zGal,counts,ReScale,RdScale,bttGal,eGal,iGal,phiGal)) 
     plt.show()
     
 
