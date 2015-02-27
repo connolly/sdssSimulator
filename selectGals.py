@@ -210,6 +210,8 @@ def main():
                         help="Number of gaussians to fit density of galaxy properties")
     parser.add_argument("--seed", type=int, default=1827493,
                         help="Random seed")
+    parser.add_argument("--csv", type=bool, default=False,
+                        help="Save images as csv files")
     args = parser.parse_args()
 
     
@@ -255,20 +257,23 @@ def main():
     sampled_data = properties.selectRandomND(nsample)
 
     # create galsim images
+    pixel = 0.45
     random_seed = args.seed  
     rng = galsim.BaseDeviate(random_seed)
     of = open(os.path.join(args.outputDirectory,args.outputFile),'w')
-    of.write("#Index, m, z, counts, Re(arcsec), Rd(arsec), BTT, ellipticity_bulge, inclination_disk, PA\n") 
+#    of.write("#Index, m, z, counts, Re(arcsec), Rd(arsec), BTT, ellipticity_bulge, inclination_disk, PA_bulge, PA_disk\n") 
+    of.write("#Index, m, z, mu_x, mu_y, counts_bulge, counts_disk, Re(pixels), Rd(pixels), ellipticity_bulge, inclination_disk, PA\n") 
     for i,(mGal,zGal,scaleGal,eGal,iGal,phiGal,bttGal,(Re,Rd)) \
             in enumerate(zip(m,z,sizeScale,e, i, phi, BTT, sampled_data)):
         #set bounds for values
-        ReScale = setBounds(Re/scaleGal, 0., 10.)
-        RdScale = setBounds(Rd/scaleGal, 0., 10.)
+        print mGal,zGal,scaleGal,eGal,iGal,phiGal,bttGal,Re,Rd
+        ReScale = setBounds(Re/scaleGal.value, 0., 10.)
+        RdScale = setBounds(Rd/scaleGal.value, 0., 10.)
         bttGal = setBounds(bttGal, 0., 1.)
         eGal = setBounds(eGal, 0., 1.)
 
 
-        print i,mGal,zGal,ReScale,RdScale
+#        print i,mGal,zGal,ReScale,RdScale
         bulge = galsim.Sersic(4, half_light_radius=ReScale)
         shear = galsim.Shear(q=1.-eGal,beta=phiGal*galsim.radians)
         bulge = bulge.shear(shear)
@@ -284,11 +289,14 @@ def main():
         # TODO - fix to derive from SDSS PSF
         psf = galsim.Gaussian(flux=1., sigma=0.5) # PSF flux should always = 1
         final = galsim.Convolve([psf, gal])
-        img = galsim.ImageF(64, 64, scale=0.45)
+        img = galsim.ImageF(64, 64, scale=pixel)
         image = final.drawImage(image=img)
         image.write('%s/testImage_%d.fits'%(args.outputDirectory,i))
-        of.write("%d, %g, %g, %g, %g, %g, %g, %g, %g, %g\n"
-                 %(i,mGal,zGal,counts,ReScale,RdScale,bttGal,eGal,iGal,phiGal)) 
+        if (args.csv == True):
+            np.savetxt('%s/testImage_%d.csv.gz'%(args.outputDirectory,i), img.array, delimiter=",")
+        of.write("%d, %g, %g, 32., 32., %g, %g, %g, %g, %g, %g, %g %g\n"
+                 %(i,mGal,zGal,counts*bttGal,counts*(1.-bttGal),ReScale/pixel,RdScale/pixel,eGal,iGal,phiGal, phiGal))
+        
     plt.show()
     
 
